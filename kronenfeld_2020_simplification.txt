@@ -1,0 +1,1103 @@
+﻿Full Terms & Conditions of access and use can be found at
+https://www.tandfonline.com/action/journalInformation?journalCode=tica20
+International Journal of Cartography
+ISSN: 2372-9333 (Print) 2372-9341 (Online) Journal homepage: https://www.tandfonline.com/loi/tica20
+Simplification of polylines by segment collapse:
+minimizing areal displacement while preserving
+area
+Barry J. Kronenfeld, Lawrence V. Stanislawski, Barbara P. Buttenfield & Tyler
+Brockmeyer
+To cite this article: Barry J. Kronenfeld, Lawrence V. Stanislawski, Barbara P. Buttenfield & Tyler
+Brockmeyer (2019): Simplification of polylines by segment collapse: minimizing areal displacement
+while preserving area, International Journal of Cartography, DOI: 10.1080/23729333.2019.1631535
+To link to this article: https://doi.org/10.1080/23729333.2019.1631535
+Published online: 30 Jul 2019.
+Submit your article to this journal
+Article views: 30
+View related articles
+View Crossmark data
+Simplification of polylines by segment collapse: minimizing
+areal displacement while preserving area
+Barry J. Kronenfeld
+a, Lawrence V. Stanislawski
+b, Barbara P. Buttenfield
+c
+and Tyler Brockmeyerb
+aDepartment of Geology and Geography, Eastern Illinois University, Charleston, IL, USA; bU.S. Geological
+Survey, Center of Excellence for Geospatial Information Science, Rolla, MO, USA; cDepartment of Geography,
+University of Colorado, Boulder, CO, USA
+ABSTRACT
+This paper reports on a new Area Preserving Segment Collapse
+(APSC) algorithm for simplifying polygonal boundaries while
+preserving the polygonal area at simplified target scales and
+minimizing
+areal
+displacement.
+A
+general
+segment
+collapse
+algorithm is defined by iteratively collapsing segments to Steiner
+points in priority order, guided by placement and displacement
+functions. The algorithm is specified by defining functions that
+minimize areal displacement under the constraint that the areas
+of adjoining polygons are preserved exactly. Self-intersections can
+be avoided by testing for intersections with two new line
+segments associated with each segment collapse operation. The
+paper demonstrates simplification results for a sample of 10 lakes
+formed from alpine, Karst, glacial and arid desert processes as well
+as artificial dams. APSC results are compared with three other
+simplification routines and evaluated for area preservation, linear
+and areal displacement, complexity and introduction of boundary
+self-intersections.
+Results
+confirm
+that
+the
+APSC
+algorithm
+preserves area exactly and indicate that it outperforms the other
+tested
+algorithms
+for
+minimizing
+areal
+displacement
+while
+producing reasonably low measures of linear displacement. Self-
+intersections can occur more commonly with APSC than other
+algorithms but are avoided with the proposed topology check.
+The APSC algorithm additionally preserves polygon complexity
+better than other tested algorithms.
+RÉSUMÉ
+Ce papier présente un nouvel algorithme appelé APSC (Area
+Preserving
+Segment
+Collapse)
+pour
+simplifier
+les
+limites
+polygonales tout en préservant les surfaces à une échelle cible et
+en minimisant la surface de déplacement. Nous définissons un
+algorithme de réduction de segment en regroupant de façon
+récursive des segments aux points de Steiner par ordre de priorité
+et guidé par des fonctions de positionnement et de déplacement.
+L’algorithme
+est
+spécifié
+en
+définissant
+des
+fonctions
+qui
+minimisent la surface de déplacement sous la contrainte que les
+surfaces des polygones adjacents soient exactement préservées.
+Les intersections de la ligne avec elle-même peuvent être évitées
+en testant les intersections avec deux nouveaux segments de
+ARTICLE HISTORY
+Received 30 September 2018
+Accepted 22 May 2019
+KEYWORDS
+Cartographic generalization;
+Steiner points; area
+preservation
+© 2019 International Cartographic Association
+CONTACT Barry J. Kronenfeld
+bjkronenfeld@eiu.edu
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+https://doi.org/10.1080/23729333.2019.1631535
+ligne associés à chaque opération de réduction de segment. Le
+papier présente des résultats de simplification pour un échantillon
+de 10 lacs formés à partir de processus alpin, karstique, glacier et
+de désert aride ainsi que des barrages artificiels. Les résultats de
+l’APSC
+sont
+comparés
+avec
+trois
+autres
+algorithmes
+de
+simplification et sont évalués sur des critères de préservation de
+surface, de déplacement linéaire et surfacique, de complexité et
+de création d’intersection de la ligne avec elle-même. Les résultats
+confirment que l’algorithme APSC préserve exactement la surface
+et montre qu’il surpasse les autres algorithmes testés pour
+minimiser le déplacement surfacique tout en produisant des
+valeurs raisonnablement faibles pour le déplacement linéaire.
+L’auto-intersection peut se produire plus souvent avec l’APSC
+qu’avec d’autres algorithmes mais ces intersections sont évitées
+grâce à un contrôle topologique. De plus l’algorithme APSC
+préserve mieux la complexité des polygones que les autres
+algorithmes testés.
+Introduction
+Developing simplified representations of a two-dimensional polyline is an important
+problem in cartographic data analytics where datasets must be integrated a cross
+spatial resolutions. This problem is generally referred to as line simplification and is
+driven by preservation of global shape as well as specific analytic properties such as pos-
+itional accuracy and high-frequency detail. However, the distinction between linear fea-
+tures
+and
+polygon
+boundaries
+is
+rarely
+considered.
+Polygonal
+features
+differ
+fundamentally from linear features in that they represent areal regions covering a
+portion of the Earth’s surface. As such, they lend themselves naturally to the additional
+objective of preserving area across scales of representation.
+Only a limited number of studies have been conducted on area-preserving polyline
+simplification techniques, and these have focused on theoretical aspects (Bose et al.,
+2006) and the development of algorithms for schematic simplification (Meulemans,
+van Renssen, & Speckmann, 2010) and smoothing (Tutić & Lapaine, 2009). Although
+areal displacement has been used both to guide (Visvalingam & Whyatt, 1992) and to
+measure the quality (McMaster, 1986) of line simplification algorithms, the directional
+symmetry or asymmetry of displacement is rarely considered. Shen, Ai, and He (2018)
+recently compared several simplification algorithms on lake boundaries for effects on
+area and positive and negative displacement area, but no simplification constraints
+were applied to control these effects. We argue that displacement symmetry leads
+directly to area preservation, bringing both intrinsic value as an objective function in
+and of itself as well as utility in constraining solutions to minimize overall deviation
+from the original polygonal boundary.
+The fundamental value of area preservation derives from perceptual and analytic
+requirements in various domains for accurate database and map representations of
+area. On thematic maps, it is important to be able to perceive the relative density of a vari-
+able, and calculation of attributes such as population density depends on accurate reten-
+tion of area in simplified polygon datasets. Where line simplification is used on a
+cartogram, area preservation is required to retain the accuracy of the cartogram. The
+2
+B. J. KRONENFELD ET AL.
+analytical importance of area extends to nearly all forms of geospatial analysis, for example
+to domains such as hydrologic modeling where the surface area of lakes and streams
+determines evaporation rates and geochemical exchanges between the air and water
+below it. Where such modeling extends across large study areas that warrant data
+reduction and boundary simplification, polygonal areas must be preserved to support
+accurate computations.
+Beyond the intrinsic value of preserving area for specific perceptual and analytic pur-
+poses, there are logical arguments as to why area preservation might generally lead to
+better preservation of global shape in reduced-scale representations of any polyline. For
+instance, If the areal displacement is larger on one side of the line than on the other, a
+better simplified representation could be obtained by shifting the line towards the direc-
+tion of greater displacement. Since this logic applies to any line, ‘area’ preservation might
+be a useful criterion even for lines that do not bound areal regions, such as single-line
+rivers and roads.
+To explore these ideas further, a novel area-preserving polyline simplification algorithm
+is developed. The algorithm works by iteratively collapsing segments to points and is
+referred to as Area-Preserving Segment Collapse (APSC). The concept of segment collapse
+has been utilized in previous algorithms with explicitly visual aims of smoothing (Tutić &
+Lapaine, 2009) and collapsing visually non-discernible vertices (Raposo, 2013). In contrast,
+APSC is driven by analytical error-minimization objectives. Specifically, selection and col-
+lapse are controlled by the simultaneous goals of minimizing areal displacement and bal-
+ancing area preservation across both sides of a simplified boundary. Procedurally, APSC is
+similar to the Visvalingam and Whyatt (1992) Effective Area (VEA) algorithm, but instead of
+removing a single vertex at each step, two vertices are removed and one new vertex is
+added.
+To avoid confusion, we distinguish between two related but distinct concepts that are
+both used to guide the APSC algorithm. Area preservation is a term that refers to the
+precise equivalence of area computation prior to and following simplification processing.
+Areal displacement, in contrast, refers to local boundary shifts during processing. All line
+simplification algorithms result in some degree of areal displacement between the original
+and simplified polyline. Nevertheless, it is possible to avoid a global reduction or enlarge-
+ment in the size of a polygon, and thus preserve area exactly, by balancing displacement
+on either side of a polygon boundary. The resulting area at target scales precisely matches
+area at the source scale, even though some areal displacement occurs locally.
+The segment collapse algorithm also differs from many commonly used line simplifica-
+tion algorithms in that it introduces new vertices (Steiner points). Indeed, it is unlikely that
+any line simplification algorithm can preserve area exactly without using Steiner points
+(Bose et al., 2006). The introduction of Steiner points does not appear to obstruct preser-
+vation of critical points, which tend to be situated where linear features change direction
+and are acknowledged to be important for shape recognition (Attneave, 1954). Thus,
+Steiner points can preserve a geometric property (area) needed for analytical purposes,
+without corrupting the visual property (angular change) needed for cartographic display.
+The paper proceeds as follows. The next section reviews line simplification algorithms,
+highlighting those that preserve area and/or introduce Steiner points. Section three
+describes and illustrates the proposed segment collapse algorithm and strategy to mini-
+mize areal displacement while meeting the area-preserving objective, as well as a strategy
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+3
+to prevent self-intersection. Section four presents the experimental design, detailing the
+comparison of APSC with VEA, Ramer-Douglas-Peucker (RDP) and Raposo Spatial Means
+(RSM) algorithms. The algorithms are tested on 10 lakes from across the conterminous
+United States with varying spatial structure and geomorphic origin. The results of these
+experiments are presented in section five. The last section discusses advantages and dis-
+advantages of the proposed algorithm and potential directions for future research.
+Background
+Line simplification
+Numerous line simplification algorithms have been proposed and implemented. Pub-
+lished reviews categorize algorithms based on the types of errors that are introduced
+(McMaster, 1986), various conceptual models that guide processing (McMaster & Shea,
+1992), a comparison of assumptions underlying generalization processing (Buttenfield,
+1985), chronologies of algorithm development (Li, 2006, 2007) and inventories of gener-
+alization operators (Stanislawski, Buttenfield, Bereuter, Savino, & Brewer, 2014). Interested
+readers are encouraged to explore these resources for comprehensive discussions about
+specific approaches and algorithms.
+Several algorithms are commonly encountered in GIS software platforms. The RDP
+algorithm simplifies a feature by retaining a subset of vertices that lie further than the tol-
+erance distance from a hierarchy of baselines composed from the feature’s vertices
+(Douglas & Peucker, 1973; Ramer, 1972). The simplification proceeds hierarchically, effec-
+tively prioritizing coordinate positions for progressively more aggressive simplifications.
+This algorithm is useful for simplifying human-made linear features whose angularity is
+deemed important, such as building polygons, roads or administrative boundaries. It
+carries the added advantage of preserving a subset of original coordinates at every
+level of simplification. The Bend-Simplify algorithm (Wang & Müller, 1998) moves along
+a line and eliminates points that demarcate small curves and bends while preserving
+larger trending shapes. The algorithm attempts to simulate manual line simplification
+by applying rule-based operations on bend features that would be identified and pro-
+cessed (i.e. removed or merged) by a human cartographer. The Bend-Simplify algorithm
+is typically used for naturally occurring features, such as stream channels and lakes
+(Gary, Wilson, Archuleta, Thompson, & Vrabel, 2010). The VEA method attempts to mini-
+mize areal displacement by forming triangles from triplets of sequential points and repla-
+cing the smallest triangles with a straight-line segment by eliminating the middle point
+(Visvalingam & Whyatt, 1992). While areal displacement is effectively reduced, the algor-
+ithm does not preserve area precisely.
+Steiner points
+The above algorithms all produce simplified polylines that consist of a subset of the orig-
+inal polyline vertices, with no ‘Steiner’ points. The concept of Steiner points comes from
+the discipline of computational geometry and refers to a point or set of points that are
+introduced when solving a geometric optimization problem to improve upon solutions
+based only on the original point set (de Berg, van Kreveld, Overmars, & Schwarzkopf,
+4
+B. J. KRONENFELD ET AL.
+2000). Steiner points have been used, for example, to develop triangulations with better
+properties such as larger minimum angle and shorter total line length (Eppstein, 1994).
+In the context of line simplification, the flexibility afforded by Steiner points may enable
+solutions with less displacement than popular algorithms that do not employ Steiner
+points. For example, Cromley (1992) presents an algorithm generating a principal axis
+or regression line through subsets of vertices, using Steiner points to reduce a line to a
+given tolerance using fewer vertices than required by the RDP algorithm.
+Several algorithms utilizing Steiner points operate by enclosing a small number of
+original coordinates within a regular polygon and then reducing them to a single repre-
+sentative (Steiner) point, such as the centroid of the regular polygon or the spatial
+mean of the vertices located within that polygon. Li and Openshaw (1992) overlay a
+regular square grid onto a polyline and collapse vertices within each grid cell to a
+single point. Raposo (2013) improves on the methods of Li and Openshaw by using a hex-
+agonal tesselation instead of a square grid. In the RSM algorithm, coordinates falling within
+each hexagon are replaced with the spatial mean of those coordinates, which is likely a
+Steiner point when more than one point falls within a hexagon. RSM has the added advan-
+tage of obtaining significantly lower horizontal displacement errors than occur with Li and
+Openshaw’s (1992) method.
+It is worthwhile to examine the general case for Steiner points, and how the inclusion of
+points that are not in the original coordinate set can lead to a better representation. Con-
+sider the case of a polygon with a large number of vertices that approximates a circle, and
+the problem of representing this feature with a simpler polygon containing only six ver-
+tices (Figure 1). An optimal simplification will be a regular hexagon. If the n vertices are
+constrained to the original polygon (Figure 1(a)), it will be an inscribed hexagon, and
+17.3% of the original polygon will fall outside the simplified shape. On the other hand,
+if Steiner points are allowed, one can construct a hexagon with an equal area to the orig-
+inal polygon. In this case, 3.7% of the original polygon will fall outside the hexagon, and an
+equal area of the hexagon will fall outside the original polygon. Thus the total areal displa-
+cement will be 7.4%, an improvement of 57% from the optimal solution without Steiner
+points.
+Note that the introduction of Steiner points not only reduces the overall displacement
+area but also balances it on either side of the original polygon boundary, thus preserving
+the area of the polygon.
+Figure 1. Optimal simplification of a polygon simplifying a circle to six vertices without (a) and with (b)
+Steiner points.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+5
+Handling topological errors
+Most line simplification algorithms can produce topological errors such as self-intersec-
+tions, and various strategies have been proposed to avoid these errors. These can be
+divided into strategies to prevent topological errors from occurring during the line simplifi-
+cation process (e.g. Kulik, Duckham, & Egenhofer, 2005; Saalfeld, 1999) and strategies to
+detect and fix topological errors after simplification (e.g. Lee & Hardy, 2005; Raposo,
+2013). Of most relevance to our work is the observation by Kulik et al. (2005) that the tri-
+angle-criterion, derived from mathematical topology, enables a simple topology check for
+any algorithm that works by sequential vertex elimination. The triangle-criterion states
+that when a vertex is eliminated from a polyline, topological errors will be introduced
+only if there exists a point lying in the triangle formed by that vertex and its neighbors.
+Thus, for any sequential elimination algorithm, a simple point-in-triangle test can be
+used to identify and avoid topological errors associated with eliminating each vertex.
+Area preservation
+Only a few studies have investigated the preservation of area in polyline simplification. The
+lack of algorithms that preserve area is an inevitable consequence of the fact that most line
+simplification algorithms retain subsets of the original vertices, since the general problem
+of determining if a line can be simplified to preserve adjoining areas is intractable for large
+polylines (i.e. NP-hard) when only existing vertices are used (Bose et al., 2006). Indeed, on a
+closed convex polygon such as shown in Figure 1, preserving adjoining areas without
+using Steiner points is demonstrably impossible. Thus, the few algorithms that have
+been developed to preserve area either are inexact or introduce Steiner points.
+Bose et al. (2006) develop an algorithm to preserve area to within a specified toler-
+ance without using Steiner points. Their algorithm can only be applied, however, to
+so-called monotone chains, which are polylines or sections of polylines that can be
+rotated such that they cross any given x-coordinate only once. Meulemans et al.
+(2010) present an exact area-preserving schematization of polygon tessellations that
+uses Steiner points. Their schematization is rectilinear and provides effective simplifica-
+tion of artificial features such as buildings, but the algorithm is not suitable for lakes and
+other natural features.
+Tutić and Lapaine (2009) present an area-preserving line smoothing algorithm that is
+most applicable to the cartographic generalization of natural features, and that shares
+some characteristics of the APSC algorithm. Collapsing individual segments to Steiner
+points, they demonstrate that area is preserved if these Steiner points are located on a
+specific line whose equation can be computed from the coordinates of the vertices of
+the collapsed segment and immediately adjacent segments. While our proposed algor-
+ithm utilizes this result, it differs from the algorithm of Tutić and Lapaine (2009) in three
+ways. First, their algorithm traverses the input polyline sequentially, whereas the one pro-
+posed here searches for the optimal segment to collapse at each step. Secondly, Tutić and
+Lapaine collapse only zig-zag sections (S-curves) in which two consecutive polyline seg-
+ments turn in different directions, and they do not handle curves where two consecutive
+segments curve in the same direction (C-curves). This appears to substantially restrict the
+number of vertices that can be eliminated with their algorithm. APSC does simplify both S-
+6
+B. J. KRONENFELD ET AL.
+curves and C-curves. Finally, in choosing the placement of new Steiner points, Tutić and
+Lapaine seek to minimize sharp angles, resulting in an algorithm that effectively
+smooths the original polyline. In contrast, the proposed APSC algorithm minimizes areal
+displacement, and thereby produces a simplified polyline that is similar in character to
+the original polyline.
+Methods
+General segment collapse algorithm
+A general segment collapse algorithm can be defined by iteratively collapsing segments to
+points, selecting at each iteration the collapse operation that will result in the least displa-
+cement. A collapse operation begins with a four-vertex sequence ABCD and involves
+removing the interior segment BC and replacing it with a single vertex E (Figure 2).
+Two functions are required to fully specify the algorithm. First, a placement function
+determines, for a given sequence of vertices ABCD, the location to place the new
+vertex E. Second, a displacement function measures the associated degree of displace-
+ment between ABCD and AED. The placement function is used to create a list of potential
+collapse operations for the current set of line segments, and to update this list after each
+operation is performed. The displacement function is used to prioritize the order in which
+segments are collapsed. The process continues until a stopping condition is met.
+Pseudo-code for simplifying a line L to a target areal displacement tolerance t is as
+follows:
+function segment_collapse(L, t)
+worklist ← empty list
+for all consecutive sequences ABCD in L:
+E ← placement(ABCD)
+d ← displacement(ABCD � AED)
+add [ABCD, E, d] to worklist
+while worklist is not empty:
+[ABCD, E, d] ← item with min d in worklist
+if d < t:
+collapse BC to E
+with worklist:
+Figure 2. Segment collapse. Segment BC on the original (dashed) feature is replaced by vertex E on the
+simplified (solid) feature.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+7
+remove all 4-vertex sequences involving B or C
+add all 4-vertex sequences involving E
+else exit
+The algorithm can also be modified to stop once a target number of vertices is reached,
+rather than a target areal displacement tolerance. Alternatively, cumulative areal displace-
+ment can be tracked and used to parameterize the algorithm. The algorithm is general in
+the sense that different placement and displacement functions can be defined to meet
+different objectives.
+As a specific instance of the general algorithm, we define an area-preserving segment
+collapse (APSC) algorithm by specifying the displacement function as areal displacement,
+i.e. the total area enclosed by ABCD and AED (McMaster, 1986), and by defining a place-
+ment function that both (a) preserves area on each side of the original line, and (b) mini-
+mizes areal displacement under the area-preserving constraint.
+Area preservation
+The conditions for preserving area while collapsing a segment to a Steiner point are given
+in Tutić and Lapaine (2009). Consider the four-vertex sequence ABCD in Figure 3(a). We
+seek a new point E such that the areas on each side of AED are equal to the areas on
+each side of ABCD. It is sufficient to measure the areas between these polyline sections,
+separating them into areas to the left (L) and right (R) of the original polygon as shown
+in Figure 3. The area preservation condition dictates that these two areas must be equal.
+Let
+denote the area of the triangle with vertices i, j and k using the standard
+clockwise-sequence shoelace formula or Surveyor’s formula (Braden, 1986), i.e. measured
+such that the area is negative if the vertices are sequenced counterclockwise. The area
+preservation condition can be expressed as follows:
+(1a)
+Figure 3. Area preservation condition. (a) a four-vertex sequence on the original polygon, (b) place-
+ment of new vertex E to maximize angle ∡AED while preserving area, (c) placement of new vertex
+E to minimize areal displacement while preserving area.
+8
+B. J. KRONENFELD ET AL.
+This simplifies to the following equation:
+axE + byE + c = 0,
+(1b)
+where:
+a = yD − yA,
+b = xA − xD,
+c = −yBxA + (yA − yC)xB + (yB − yD)xC + yCxD.
+Equation (1) defines a line that is parallel to AD, which we denote as E
+↔
+(Figure 3(b,c)). This
+line represents the set of possible locations of the vertex E that would meet the area pres-
+ervation condition. Intuitively, the distance from AD to E
+↔
+represents the height of triangle
+DADE whose base is AD. Figure 3(b,c) illustrates two possible solutions that preserve area,
+since E is located on E
+↔
+in both figures.
+Minimizing areal displacement
+Since the area is preserved, placement of E anywhere on E
+↔
+will result in equal areal dis-
+placement to the left and right of the original polyline. However, the magnitude of this
+displacement will vary depending on where on E
+↔
+the new vertex is placed. It is natural
+to seek the location of E that will minimize total areal displacement, thus meeting the
+second objective mentioned above. This objective was mentioned but not solved by
+Tutić and Lapaine (2009), who instead chose to maximize the angle ∡AED. Figure 3 illus-
+trates the difference between the angle-maximizing solution (Figure 3(b)) and the solution
+that minimizes areal displacement (Figure 3(c)).
+To develop the areal-displacement-minimizing solution, we consider regular topologi-
+cal configurations of the vertices B and C and the lines AD and E
+↔
+. Specifically, we show that
+the minimum areal displacement is obtained by placing E at the intersection of E
+↔
+with
+either AB or CD depending on the topological configuration of B, C, E
+↔
+and AD. Excluding
+singularities, three configurations are possible (Figure 4):
+1. vertices B and C are on opposite sides of both AD and E
+↔
+(Figure 4(a)),
+2. vertices B and C are on the same side of AD but different sides of E
+↔
+(Figure 4(b)), or
+3. vertices B and C are located between AD and E
+↔
+(Figure 4(c)).
+Vertices B and C cannot both lie on the same side of both AD and E
+↔
+because if they did,
+then the area preservation condition would not be met.
+The location of E that minimizes areal displacement for each configuration is shown in
+Figure 4. Consider the first configuration, with vertices B and C on opposite sides of both
+AD and E
+↔
+(Figure 4(a)). If B is on the same side of AD as E
+↔
+(as shown) then the optimal
+location for E is the intersection of AB and E
+↔
+, otherwise, it is the intersection of CD and
+E
+↔
+. To confirm that this is optimal, consider any alternative location E′ on E
+↔
+and the corre-
+sponding displacement areas L’ and R’ to the left and right of the original (dashed) line
+(Figure 5). For any E′ below E, L’ includes L as a proper part and is, therefore, larger
+than L (Figure 5(b)). If E′ is above E two cases must be considered. For E′ such that the inter-
+section of AE′ and BC is closer to B than the intersection of ED and BC (Figure 5(c)), R’ will
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+9
+include R as a proper part. On the other hand, for E′ such that the intersection of AE′ and BC
+is closer to C than the intersection of ED and BC (Figure 5(d)), L’ will include L as a proper
+part. Since L=R (by Equation (1)), in all cases the total areal displacement L’+R’ will be larger
+than L+R.
+The logic shown in Figure 5(b,c) applies to the configuration in Figure 4(b) for any E′
+above or below E. For the configuration in Figure 4(c), the logic shown in Figure 5(c)
+applies for any E′ below E. For E′ above E, R’ > R can be proven geometrically by splitting
+R and R’ into two triangles along a vertical line through B, and noting that both their shared
+baseline and the sum of their altitudes will increase. Building on these observations, a
+common rule can be applied to the configurations in both 4b and 4c: if B is further
+from AD than C then the location of E that minimizes areal displacement is the intersection
+of CD and E
+↔
+, otherwise it is the intersection of AB and E
+↔
+.
+Figure 5. Illustration of the optimality of the placement of E in Figure 4(a). (a) optimal placement at the
+intersection of AB and E
+↔
+, (b) placement below the intersection of AB and E
+↔
+, (c) placement above the
+intersection of AB and E
+↔
+. Dark shaded areas in (b) and (c) signify the additional region of displacement
+added to L and R, respectively, by moving E from its position in (a).
+Figure 4. Possible configurations of B, C, AD and E
+↔
+. (a) B and C are on opposite sides of both AD and E
+↔
+;
+(b) B and C are on the same side of AD but opposite sides of E
+↔
+; (c) B and C both lie between AD and E
+↔
+.
+Optimal placement of E is at intersection of E
+↔
+and AB if: (a) E
+↔
+and B are on the same side of AD; (b or c)
+B is further than C from AD. Otherwise, optimal placement of E is at intersection of E
+↔
+and CD.
+10
+B. J. KRONENFELD ET AL.
+Combining the above observations, a placement function for choosing the location of
+the new vertex E to replace vertices B and C in a sequence of vertices A, B, C, D can be
+expressed in pseudo-code as follows:
+function placement(A,B,C,D)
+Compute E
+↔
+using eq. 1.
+if side(B, AD) = side(C, AD):
+if d(B, AD) . d(C, AD):
+return intersection(E
+↔
+, AB)
+Else if d(B, AD) , d(C, AD):
+return intersection(E
+↔
+, CD)
+else:
+if side(B, AD) = side(E
+↔
+, AD):
+return intersection(E
+↔
+, AB)
+else:
+return intersection(E
+↔
+, CD)
+Here, d(x, L) denotes the perpendicular distance between point x and line L, and side
+side(x, L) denotes the topological position of a point x (or a point on the line x if x is a
+line), which can be either left or right of the directed line L.
+We now consider the optimality of the above placement function in three singular
+configurations, shown in Figure 6. In Figure 6(a), E
+↔
+is coincident with AD. In this case,
+the placement of E anywhere along E
+↔
+is optimal and will result in three collinear vertices.
+The placement function described above will result in the placement of E at either A or D
+(shown). Figure 6(b) represents the case where three sequential vertices B, C and D are col-
+linear. Clearly, optimal placement is at B. This is equivalent to removing the middle of the
+three collinear vertices, in this case C. Furthermore, the displacement area associated with
+this collapse operation will be zero. This means that removal of collinear vertices (including
+those resulting from the configuration in Figure 6(a)) will be automatically prioritized by
+the segment collapse algorithm. Lastly, Figure 6(c) shows the situation where BC is parallel
+to AD (and thus E
+↔
+), in other words, B and C are equidistant from AD. In this configuration,
+Figure 6. Examples of singular configurations, with optimal placement of E: (a) E
+↔
+is coincident with AD
+(placement anywhere between A and D is optimal, but placement is not necessary), (b) B, C and D are
+collinear (optimal placement is at B), (c) BC is parallel with AD (placement along E
+↔
+anywhere between
+the intersections with AB and CD is optimal).
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+11
+placing E anywhere between the locations where E
+↔
+intersects AB and CD will result in
+equal areal displacement. For each of the above singular configurations, the placement
+function described above will produce an optimal solution, although in two cases it is
+just one of many possible such solutions. We note, however, that such singular cases
+will occur rarely for natural features.
+Preventing self-intersection
+We now describe a simple test to avoid self-intersections. First, note that each collapse
+event in the APSC algorithm results in displacement across at most two triangular
+regions. Since these triangles may contain more than one new edge, however, the tri-
+angle-criterion does not strictly apply. That is, we cannot simply check for the existence
+of a vertex within these displacement triangles, because a topological error may be
+caused by a line segment that crosses a triangle but whose endpoints both lie outside
+of it. However, since the displacement area at each step is well defined it is still possible
+to check for any topological error caused by this displacement. To prevent self-intersec-
+tions, it is sufficient to check whether any existing line segment (excluding AB, BC and
+CD) crosses either AE or ED prior to performing each collapse event and then exclude
+that collapse operation. By refraining from collapsing any segment in which either of
+these two triangles intersects an existing segment, it can be guaranteed that no self-inter-
+sections will be introduced in the simplification process.
+Comparison of simplification algorithms
+Data
+We conducted an experiment to compare the effectiveness of APSC with three well-known
+line simplification algorithms. As experimental data, a set of ten (10) lakes was selected
+from different conditions within the conterminous United States. Sample features are
+from the high-resolution (HR) National Hydrography Dataset (NHD). Within the contermi-
+nous United States, HR NHD is a multi-scale dataset composed of hydrographic data from
+the best available data contributed from source scales of 1:24,000 (24 K) or larger (Stani-
+slawski, Falgout, & Buttenfield, 2015; Stanislawski et al., 2016; U. S. Geological Survey,
+2017). Ten sample lakes formed by a variety of geomorphic processes were selected for
+analysis, with one, two, two, four, and one of the lakes derived from alpine, dam, desert,
+glacial and karst geomorphic conditions, respectively (Figure 7). The lakes range in area
+from about 31 to over 63,000 square kilometers, with boundaries containing between
+1800 and 410,000 vertices (mean: 54,946, median: 9253). Features are represented with
+coordinates projected in the North American Albers Equal Area Conic projection.
+Experimental design
+Three simplification algorithms – VEA, RDP, and RSM – are compared to the APSC algor-
+ithm both with and without a topology check to prevent self-intersections. For comparison
+purposes, we follow previous researchers (Shi & Cheung, 2006; Tutić & Lapaine, 2009; Vis-
+valingam & Whyatt, 1993; Zhou & Jones, 2005) to simplify each feature to nearly identical
+numbers of vertices using each algorithm. Since each of the 10 HR NHD lake polylines has
+a different number of vertices, the target number of vertices to retain for each feature is
+12
+B. J. KRONENFELD ET AL.
+chosen by using the Radical Law (Töpfer & Pillewizer, 1966) to estimate vertices sufficient
+for target scales of 1:100,000 (100K); 1:500,000 (500 K); 1:1,000,000 (1 M); and 1:5,000,000
+(5 M). This results in target proportions of original vertices of 0.49, 0.22, 0.15, and 0.07
+respectively. We do not attempt to directly target a given map scale through parameter-
+ization because each algorithm uses a different metric for parameterization, so the results
+would not be comparable. With VEA, RDP and APSC, the target number of vertices is
+obtained exactly by sequentially removing or adding points. For RSM, we iteratively
+adjust the controlling parameter (hexagon size) until the target number of vertices is
+obtained as nearly as possible. In some cases, this results in differences of +/−2 vertices
+from the target.
+Assessment
+Several metrics compare the geometric characteristics resulting from each algorithm.
+Metrics determined for each simplified lake polygon include area, areal displacement,
+complexity, and modified Hausdorff distance (MHD). The area of original and simplified
+polygons is computed using the shoelace (Surveyor’s) formula (Braden, 1986). For this
+paper, polygon complexity is defined as the perimeter squared divided by the area,
+which is the inverse of a commonly used compactness metric (MacEachren, 1985). Areal
+displacement is computed as the summed area of polygons created when an original
+Figure 7. Geographic category and distribution of 10 sample lakes in the conterminous United States.
+Features are selected from the waterbody feature class of the high-resolution National Hydrography
+Dataset. Five-kilometer resolution data show the approximate range of elevation conditions within
+the study.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+13
+linear feature and a simplified version of the same feature are overlaid. For the case of
+polygons, the displacement area is determined through a union of the original polygon
+with its simplified version after all island polygons are removed from the simplified
+version, which may occur when a boundary intersects itself. The issue of self-intersection
+is further addressed later in the discussion section.
+The Hausdorff distance between two geometric shapes is the largest minimum distance
+between any point on one shape to any point on the other (Hangouët, 1995; Nutanong,
+Jacox, & Samet, 2011; Rucklidge, 1996). For computational efficiency, modified Hausdorff dis-
+tance (MHD) is determined in this paper as the larger of two distances: either the furthest
+minimum distance between the vertices of the simplified line and its original version, or
+the furthest minimum distance between the vertices of the original line and its simplified
+version. Given some vertex reduction, these two distances will not be equal in every case
+because the minimum distances are not always vertex-to-vertex.
+Area, area displacement, complexity, and MHD are computed for original and sim-
+plified features for each of the four levels of simplification using each algorithm.
+Values for 10 lake features are averaged for each level of simplification. Percent
+change from original values is computed for average complexity and average area. In
+addition, the maximum MHD is identified among the ten lake features for each simplifi-
+cation level and algorithm.
+To assess topological correctness of simplified features, self-intersections are identified
+on each simplified feature, and the number of intersections is tabulated for each feature.
+No self-intersections exist in the original lake boundaries.
+Results
+Simplification assessment metrics are compared with respect to the percent of original
+vertices retained for 10 sample features at each level of detail. An average number of ver-
+tices decreases with increasing simplification to achieve smaller scale representations,
+with average vertices of about 55,000 (100%) for original features reducing to about
+3800 (7%) at 5 M.
+Area preservation
+Mean and maximum change in the area of all lakes caused by simplification at the four levels
+of detail are summarized in Figure 8. When reviewing figures, higher simplification results
+are on the left moving to less simplification on the right. Results confirm that APSC with top-
+ology check results in no net change in area, meaning that displacement areas on the inside
+and outside of the original features were exactly equivalent. Without the topology check our
+calculations showed a very slight change in area caused by the APSC, but this may be due to
+ambiguities of performing calculations on self-intersecting polygons.
+Percent absolute change in area (Figure 8(a)) increases on average with increasing
+levels of simplification for all other algorithms. To illustrate worst-case scenarios, the
+maximum changes in area for each algorithm were also evaluated. The greatest percent
+change in area is generated with the RSM algorithm, which causes up to 0.3 percent
+area change at the 100 K level (49% vertices retained) and 5.6 percent change at the
+5 M level (7% vertices retained). Maximum overall change in area at the 5 M level
+14
+B. J. KRONENFELD ET AL.
+ranged from 1.0 km2 for the VEA algorithm to as high as 3.6 km2 with the RSM algorithm.
+The VEA algorithm generated less area change than RDP at all levels of detail, and RSM
+generated the most areal change at all but one level of detail.
+Areal displacement
+Average total displacement area of the simplified features on the inside and the outside of
+the original features increases with increasing levels of simplification as shown in Figure 9.
+Average values indicate the APSC algorithm generates the least displacement area at all
+levels of detail, with a maximum average displacement area of 4.4 km2 at the 5 M level
+of detail. Including a topology check increased areal displacement slightly (2.5% on
+average) above the value obtained without the topology check. Increasingly larger
+average displacement areas are generated by the VEA, RDP, and RSM algorithms, which
+respectively peak at 5.8, 7.4, and 13.2 km2 at the 5 M level of detail.
+Figure 9. Mean displacement area in square kilometers (sq. km.) from original features for ten sim-
+plified lake polygons at four levels of detail. Asterisk denotes algorithm implemented with topology
+check.
+Figure 8. Absolute changes in area from original features for 10 lake polygons simplified to 4 levels of
+detail. (a) mean percent change in area, (b) mean absolute change in area, and (c) maximum absolute
+change in area. Values for APSC algorithm with and without topology check are nearly identical and
+cannot be visually distinguished.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+15
+Modified Hausdorff Distance (MHD)
+Average and maximum linear displacement measured using MHD values are summarized
+in Figure 10(a,b), respectively. The RDP algorithm generates the least positional displace-
+ment of all algorithms, as indicated by both average and maximum values, with the APSC
+algorithm generating the next larger values, at all levels of simplification. Shi and Cheung
+(2006) tested several line simplification algorithms on island boundaries and also found
+the RDP produced the least positional displacement than other tested algorithms.
+Inclusion of a topology check reduced MHD noticeably at 500 K and 1 M scales, but this
+effect varied widely and the topology check also increased MHD for some features. VEA
+and RSM generate more positional displacement than RDP and APSC at all simplification
+levels. For the features tested, maximum displacement values from the APSC (both with
+and without topology check) and RDP are smaller than the National Map Accuracy Stan-
+dards (NMAS) of 1/50th of an inch (U. S. Bureau of Budget, 1947) at 100 K, 500 K, 1 M, and
+5 M, which converts to about 51, 254, 508, and 2540 meters, respectively. VEA creates a
+maximum MHD value greater than the NMAS standard at 100 K, and RSM creates a
+value that exceeds standards at 100 K, 500 K and 1 M. Average MHD values, however,
+were below NMAS limits for all algorithms at all tested scales.
+Complexity of boundary lines
+Complexity values of the original lakes (as described above) range from 37 to 2475, with an
+average of 504. The sample lakes are about 3–200 times more complex than a minimum
+complexity unit circle (complexity = 12.57). Average percent change in feature complexity
+of the simplified lakes compared to original features is shown in Figure 11. As expected,
+feature complexity decreases, on average, with increasing simplification in all cases,
+except for the APSC algorithm, which shows a slight increase in average complexity at
+Figure 10. Modified Hausdorff distance from original features for 10 simplified lake polygons at four
+levels of detail. (a) mean modified Hausdorff distance, (b) maximum modified Hausdorff distance.
+Asterisk denotes algorithm implemented with topology check.
+16
+B. J. KRONENFELD ET AL.
+the 100 K, 500 K, and 1 M simplification levels. This pattern was moderated slightly with
+the inclusion of a topology check. The protection of feature complexity at large scales
+forms an unexpected result, and indicates that the algorithm tends to extend curves
+outward more often than it eliminates curves at least at low levels of simplification.
+On average RDP and VEA reduce complexity about the same amount as APSC
+increases it at the 100 K level, with the RSM algorithm having the largest average com-
+plexity reduction of about 6 percent. At higher simplification levels, average feature
+complexity decreases, with APSC, causing the least change, and increasingly larger
+changes result for RDP, VEA, and RSM, with RSM reducing complexity by nearly 35
+percent, on average, at 5 M level of detail. Shi and Cheung (2006) noted the RDP algor-
+ithm created the least amount of angular shape distortion among the algorithms tested
+on island boundaries.
+Topological correctness
+Prior to incorporating a topology check, the APSC algorithm generated a greater number
+of self-intersections during simplification processing than did other tested algorithms
+(Table 1). Self-intersecting lines are, however, generated by all four tested simplification
+methods and levels of detail, with larger numbers generated in more sinuous parts of
+Table 1. Self intersections (features with at least one self-intersection) created for 10 simplified lake
+polygons at four levels of detail using four simplification algorithms.
+Simplification level
+Algorithm
+0.49
+0.22
+0.15
+0.07
+APSC
+4(2)
+67(8)
+151(9)
+264(9)
+APSC*
+0(0)
+0(0)
+0(0)
+0(0)
+VEA
+4(2)
+6(3)
+21(6)
+22(6)
+RDP
+2(1)
+14(6)
+33(8)
+96(6)
+RSM
+7(3)
+28(5)
+30(5)
+62(7)
+Notes: Four levels of detail, 1:100,000, 1:500,000, 1:1,000,000, and 1:5,000,000 reduce the number of vertices of each lake
+feature to about 49, 22, 15, and 7 percent of the vertices of the original feature, respectively. Number of intersections/
+number of lake boundaries with intersections. Highest values are bold.
+Figure 11. Mean percent change in feature complexity from original features for ten simplified lake
+polygons at four levels of detail. Asterisk denotes algorithm implemented with topology check.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+17
+the boundary, and as more vertices are removed. The APSC generates the largest number
+of intersections at the three smallest levels of detail, creating more than twice as many
+intersections than the other algorithms respectively. The RSM method generates the
+most self-intersections at the highest level of detail, 100K. Self-intersections are more
+common for the APSC algorithm because the introduction of Steiner points can result
+in exaggeration of existing curves (discussed further below). As noted previously, strat-
+egies exist to avoid self-intersection for all line simplification algorithms, but for the
+present research, a topology check was implemented only for the APSC algorithm. As
+shown in Table 1, our analysis confirms that the topology check prevented the APSC
+from introducing any self-intersections.
+Illustration of the method
+To illustrate the differences between algorithms, a section of Lake Winnipesaukee, a lake of
+glacial origin in northern New England, is shown in Figure 12 with reductions to the 1M
+level of detail (15% of vertices retained). All algorithms present a reasonably accurate fac-
+simile of the original feature, but in the displayed region the RDP algorithm retains more
+points and therefore appears to capture the most detail. However, the APSC algorithm
+accurately captures important details that are missed by the VEA and RSM algorithms,
+such as the long and narrow inlet at center right. The RDP algorithm also captures the
+inlet. Despite the greater detail captured by other algorithms in various parts of the
+lake, APSC results in the smallest pockets of local areal displacement among the four algor-
+ithms (Figure 12, bottom row).
+The effects of the topology check are illustrated in Figure 13 for a portion of Lake Mead
+simplified to the 5 M level of detail (7% of vertices retained). In regions of high-frequency
+Figure 12. A portion of Lake Winnipesaukee, northern New England, with features simplified to
+1:1,000,000 scale (top) and associated areal displacement (bottom) for four line simplification algor-
+ithms. Areas outside the simplified lines that are eliminated from the lake are shown in green, and
+areas inside the simplified lines that are added to the lake are shown in purple.
+18
+B. J. KRONENFELD ET AL.
+detail where features must be eliminated, APSC tends to find a middle path through
+inward and outward facing protuberances (Figure 13(a)). On the other hand, in regions
+of low-frequency detail where large features must be simplified, APSC tends to exaggerate
+protuberances (Figure 13(b)), which can lead to self-intersection (Figure 13(c)). The top-
+ology check avoids the creation of self-intersections, and this avoidance can have a cas-
+cading influence on the simplification process elsewhere, especially in the immediate
+neighborhood of a potential self-intersection.
+In a production environment, a typical goal of generalization is to reduce content at
+smaller scales for data storage and processing requirements while preserving details for
+legibility or analytic tasks (Gary et al., 2010). In our comparative analyses, the first goal
+was guided by the Radical Law (Gökgöz, Sen, Memduhoglu, & Hacar, 2015; Stanislawski,
+2009; Töpfer & Pillewizer, 1966) to establish an appropriate target number of vertices as
+a clear and simple standard by which to conduct a controlled comparison of different
+line simplification algorithms. This approach has been followed by other researchers
+(Tutić & Lapaine, 2009; Visvalingam & Whyatt, 1992; Zhou & Jones, 2005), but in production
+environments, it is more common to use a tolerance defined by the largest insignificant
+detail at target scale. For this purpose, we recommend setting an areal displacement tol-
+erance area equal to the area of a triangle with sides of ¼ mm at the target scale.
+Figure 14 illustrates this strategy applied to six lake features in the HR NHD from Min-
+nesota, USA (U. S. Geological Survey, 2017), including lakes characterized by high, medium
+and low-frequency detail. Simplification to target scales of 1:100 K (4× reduction) and
+1:250 K (10× reduction) was performed using the APSC algorithm with areal displacement
+tolerance equal to 541 and 3383 m2, respectively. This reduced the number of vertices to
+Figure 13. A portion of Lake Mead with features simplified to 1:5,000,000 scale using the APSC algor-
+ithm with and without performing a topology check to prevent self-intersections. Highlighted regions
+indicate (a) high-frequency detail, (b) low-frequency detail, (c) a self-intersection that is prevented by
+the topology check. See text for explanation.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+19
+27% and 13% of the original count at 1:100 K and 1:250 K, respectively, somewhat fewer
+than predicted by the Radical Law. When displayed at the target scales, the sub-portions of
+features remain recognizable and the overlay of a segment of one lake section at all three
+scales shows close spatial coincidence. Several small angularities are introduced that
+appear unnaturally sharp in the enlarged overlay, but effectively convey the existence
+of intrusions and extrusions at target scales. Thus, the method reduces content yet
+Figure 14. APSC algorithm applied to National Hydrology Dataset (NHD) lake boundaries compiled at
+1:24 K shown at two target scales (1:100 K and 1:250 K). Each scaled version is labeled with the number
+of vertices retained. The panel in lower right corner overlays a section of Mitten Lake (Minnesota)
+boundary at all three scales to demonstrate the amount of spatial coincidence.
+20
+B. J. KRONENFELD ET AL.
+maintains shape and geometric characteristics such as frequency of detail, preserving
+global and local polygon shape even across large scale reductions.
+Discussion
+This paper presents a simplification algorithm that is novel relative to other simplification
+methods in wide use today in that it simultaneously aims to preserve area and minimize
+areal displacement. These two constraints guide the selection and collapse of polyline seg-
+ments to Steiner points. Whereas most other algorithms that use Steiner points (Cromley,
+1992; Li & Openshaw, 1992; Meulemans et al., 2010; Raposo, 2013) may collapse large clus-
+ters of vertices locally to a single point at once, the APSC algorithm is incremental, seeking
+the optimal pair of vertices to collapse at each step. Procedurally, APSC combines some
+characteristics of VEA (Visvalingam & Whyatt, 1992) and the area-preserving algorithm
+of Tutić and Lapaine (2009), with the additional development of a procedure for minimiz-
+ing areal displacement during segment collapse. The algorithm in its current version is
+computationally feasible for application to large datasets even with the inclusion of topo-
+logical protection.
+Preliminary results indicate the APSC algorithm performs well at tasks for which it was
+designed and generally outperforms the other algorithms. Specifically, the method pre-
+cisely preserves area and outperforms the other tested algorithms at minimizing areal dis-
+placement. Local pockets of areal displacement are visibly smaller for APSC than for other
+algorithms, illustrating the advantage of using Steiner points to balance displacement on
+either side of the polyline. Not surprisingly, the APSC does not perform better than other
+algorithms at tasks that it was not designed to perform. In tests reported here, the RDP
+algorithm generates the smallest overall positional displacement at all levels of detail,
+and substantially outperforms APSC and other tested algorithms in this regard.
+The distinctive properties of the APSC algorithm lead to some interesting results. The
+introduction of Steiner points allows APSC to maintain shape complexity, as bend features
+appear more likely to be exaggerated than eliminated at early stages of simplification. By
+the same token, however, in complex or sinuous sections of the features, these exagger-
+ations result in a large number of self-intersections relative to other methods, which dis-
+torts topological relations and can impact area computations. This can be remedied with
+the inclusion of a simple line intersection test to prevent collapse operations that would
+result in a self-intersection. The self-intersection test had little impact on most quantitative
+metrics, with the largest difference being a reduction in average and maximum modified
+Hausdorff distance at some levels of simplification (Figure 10(a,b)). We did not incorporate
+self-intersection tests for the other algorithms that we compared. However, given that
+these algorithms resulted in fewer self-intersections to begin with (Table 1), we suspect
+that such tests would have even smaller impact on the quantitative metrics that were
+evaluated.
+The APSC method appears to maintain horizontal positional displacement within NMAS
+standards and, on average, maintains smaller horizontal positional changes than the other
+methods, except for the RDP algorithm as mentioned above. Problems with positional dis-
+placement and intersections tend to occur in areas of high-frequency detail, such as along
+coastlines with embedded docks or piers. This implies the space between the high fre-
+quency details where intersections occur are smaller than NMAS standards and possibly
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+21
+too small to be appropriate for retention at smaller target scales, based upon feature
+capture specifications or legibility. Some modification of the algorithm may also be war-
+ranted to limit the generation of thin or jagged protrusions. While the topological correc-
+tion eliminates self-crossings, it is a binary operator and as such does not prevent lines
+from nearly touching each other. Perhaps some additional or alternative generalization
+operation is needed for proximal repeated or opposing protrusions, for example, the
+circled segment of the Island Lake polygon in Figure 14. Alternatively, positional displace-
+ment constraints could be tightened for overly detailed sections, effectively implementing
+an adaptive simplification strategy. Several scholars have considered adaptive strategies
+for line simplification (e.g. Mustiere, 2005; Nakos, Gaffuri, & Mustiere, 2008; Samsonov &
+Yakimova, 2017; Shahriari & Tao, 2002), and these could be tailored and modified to
+inform future research on areal displacement.
+The comparative testing applied in this analysis constrains features to a specific number
+of vertices, governed by the Radical Law. This allows for direct comparison among different
+algorithms but is not the typical parameterization for cartographic simplification algorithms.
+A more common approach is to designate an acceptable error tolerance (i.e. distance for
+RDP, hexagon radius for RSM) and permit a more flexible parameterization of the number
+of vertices to retain. Similar to VEA, the APSC algorithm can be parameterized by designating
+an acceptable areal displacement at each step. Unlike RDP and RSM however, the error tol-
+erance parameter for both VEA and APSC applies to individual steps only and does not guar-
+antee an upper limit on cumulative error. Consequently, for production scenarios where
+such a guarantee is required, trial-and-error may be required when using VEA and APSC
+to determine the appropriate parameter value for each feature.
+The APSC algorithm focuses on area preservation and as such is designed specifically
+for polygon boundary simplification. However, its overall performance makes it a plausible
+candidate for effectively simplifying any vector line feature. The observed protection of
+feature complexity, which is distinct from other algorithms, suggests that the algorithm
+may have unique properties that would make it suitable for specialized applications
+and this warrants further research. Lastly, the results for APSC reported here all pertain
+to the specific placement and displacement functions described, but different results
+might be obtained by substituting different placement and displacement functions into
+the general segment collapse algorithm.
+Acknowledgements
+The authors appreciate reviewer comments that strengthen the current version of this manuscript.
+Disclosure statement
+No potential conflict of interest was reported by the authors.
+Funding
+Dr. Buttenfield’s research forms a portion of work for the Grand Challenge Initiative ‘Earth Lab’ for the
+Data Harmonization Project, funded by the University of Colorado. https://www.colorado.edu/earth-
+lab/science-projects.
+22
+B. J. KRONENFELD ET AL.
+Notes on contributors
+Barry J. Kronenfeld is Associate Professor of Geography at Eastern Illinois University. His research
+investigates innovative techniques for modeling, visualizing and analyzing spatial patterns in
+human and physical landscapes. Recent projects include cartogram construction, spatial interaction,
+and modeling of gradation in area-class maps. He is currently serving as coordinator for the Pro-
+fessional Science Master’s degree program at EIU.
+Lawrence V. Stanislawski is a researcher for the Center of Excellence for Geospatial Information
+Science at the U.S. Geological Survey in Rolla, Missouri. His research interests include multiscale rep-
+resentation and automated generalization of geospatial data, geomorphometry, machine learning
+and high-performance computing of big data.
+Barbara P. Buttenfield is Professor of Geography at University of Colorado-Boulder, a Faculty
+Research Affiliate at U.S. Geological Survey’s Center for Excellence in Geospatial Science. She is Direc-
+tor of the Meridian Lab, a small campus research facility working on projects relating to visualization
+and modeling of geographic information and technology. Her research focuses on multi-scale geos-
+patial database design, uncertainty representation in environmental modeling, and terrain analysis
+for natural hazards response.
+Tyler Brockmeyer is a Missouri University of Science and Technology Computer Science Graduate. He
+worked for the U.S. Geological Survey in Rolla Missouri during the writing of this paper. Currently, he
+is working for Bayer in their Crop Science division.
+ORCID
+Barry J. Kronenfeld
+http://orcid.org/0000-0002-9518-2462
+Lawrence V. Stanislawski
+http://orcid.org/0000-0002-9437-0576
+Barbara P. Buttenfield
+http://orcid.org/0000-0001-5961-5809
+References
+Attneave, F. (1954). Some informational aspects of visual perception. Psychological Review, 61,
+183–193.
+de Berg, M., van Kreveld, M., Overmars, M., & Schwarzkopf, O. (2000). Computational geometry:
+Algorithms and applications (2nd ed.). Berlin: Springer.
+Bose, P., Cabello, S., Cheong, O., Gudmundsson, J., van Kreveld, M., & Speckman, B. (2006). Area-pre-
+serving approximations of polygonal paths. Journal of Discrete Algorithms, 4(4), 554–566.
+Braden, B. (1986). The surveyor’s area formula. The College Mathematics Journal, 17(4), 326–337.
+doi:10.2307/2686282
+Buttenfield, B. P. (1985). Treatment of the cartographic line. Cartographica: The International Journal
+for Geographic Information and Geovisualization, 22(2), 1–26.
+Cromley, R. G. (1992). Principal axis line simplification. Computers & Geosciences, 18(8), 1003–1011.
+Douglas, D. H., & Peucker, T. K. (1973). Algorithms for the reduction of the number of points required
+to represent a digitised line or its caricature. Cartographica: The International Journal for
+Geographic Information and Geovisualization, 10(2), 112–122.
+Eppstein, D. (1994). Approximating the minimum weight Steiner triangulation. Discrete &
+Computational Geometry, 11(2), 163–191. doi:10.1007/BF02574002.
+Gary, R. H., Wilson, Z. D., Archuleta, C. M., Thompson, F. E., & Vrabel, J. (2010). Production of a national
+1:1,000,000-scale hydrography dataset for the United States: Feature selection, simplification, and
+refinement. Washington D.C.: U.S. Geological survey Scientific Invertigations Report 2009-5202
+(revised 2010).
+Gökgöz, T., Sen, A., Memduhoglu, A., & Hacar, M. (2015). A new algorithm for cartographic simplifica-
+tion of streams and lakes using deviation angles and error Bands. ISPRS International Journal of
+Geo-Information, 4, 2185–2204. doi:10.3390/ijgi4042185.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+23
+Hangouët, J. F. (1995). Computation of the Hausdorff distance between plane vector polylines. Auto-
+Carto XII: Proceedings of the International Symposium on Computer-Assisted Cartography, Charlotte,
+North Carolina.
+Kulik, L., Duckham, M., & Egenhofer, E. (2005). Ontology-driven map generalization. Journal of Visual
+Languages & Computing, 16(3), 245–267.
+Lee, D., & Hardy, P. (2005). Automating generalization – tools and models. Proceedings of XXII
+International Cartographic Congress (ICC 2005), A Coruña, Spain.
+Li, Z. (2006). Algorithmic foundations of multi-scale spatial representation. Boca Raton: CRC Press.
+Li, Z. (2007). Digital map generalization at the age of the enlightenment: A review of the first forty
+years. The Cartographic Journal, 44(1), 80–93.
+Li, Z., & Openshaw, S. (1992). Algorithms for automated line generalization based on a natural prin-
+ciple of objective generalization. International Journal of Geographical Information Systems, 6(5),
+373–389.
+MacEachren, A. M. (1985). Compactness of geographic shape: Comparison and evaluation of
+measures. Geografiska Annaler: Series B, Human Geography, 67(1), 53–67.
+McMaster, R. B. (1986). A statistical analysis of mathematical measures for linear simplification. The
+American Cartographer, 13(2), 103–116.
+McMaster, R. B., & Shea, K. S. (1992). Generalization in digital cartography. Washington, DC: Association
+of American Geographers.
+Meulemans, W., van Renssen, A., & Speckmann, B. (2010). Area-preserving subdivision schematiza-
+tion. In S. I. Fabrikant, T. Reichenbacher, M. van Kreveld, & C. Schlieder (Eds.), Proceedings,
+GIScience 2010, LCNS 6292 (pp. 160–174). Berlin: Springer-Verlag.
+Mustiere, S. (2005). Cartographic generalization of roads in a local adaptive approach: A knowledge
+acquisition problem. International Journal of Geographical Information Science, 19(8–9), 937–955.
+Nakos, B., Gaffuri, J., & Mustiere, S. (2008). A transition from simplification to generalisation of natural
+occurring lines. Proceedings 11th ICA Workshop on Generaliszation and Multiple Representations,
+Montpelier, France.
+Nutanong, S., Jacox, E. H., & Samet, H. (2011). An incremental Hausdorff distance calculation algor-
+ithm. 37th International Conference on Very Large Data Bases, Seattle, Washington.
+Ramer, U. (1972). An iterative procedure for the polygonal approximation of plane curves. Computer
+Graphics and Image Processing, 1(3), 244–256.
+Raposo, P. (2013). Scale-specific automated line simplification by vertex clustering on a hexagonal
+tessellation. Cartography and Geographic Information Science, 40(5), 427–443. doi:10.1080/
+15230406.2013.803707
+Rucklidge, W. (1996). Efficient visual recognition using the Hausdorff distance. Berlin: Springer-Verlag.
+186 pp. Lecture Notes in Computer Science (1173).
+Saalfeld, A. (1999). Topologically consistent line simplification with the Douglas-Peucker algorithm.
+Cartography and Geographic Information Science, 26(1), 7–18. Doi: 10.1559/15230409978242901
+Samsonov, T. E., & Yakimova, O. P. (2017). Shape-adaptive geometric simplification of heterogeneous
+line datasets. International Journal of Geographical Information Science, 31(8), 1485–1520. doi:10.
+1080/13658816.2017.1306864
+Shahriari, N., & Tao, V. (2002). Minimising positional errors in line simplification using adaptive toler-
+ance values. Proceedings, 34th symposium on geospatial theory, processing and applications,
+Ottawa, Canada. Retrieved from http://www.isprs.org/proceedings/XXXIV/part4/pdfpapers/063.
+pdf.
+Shen, Y., Ai, T., & He, Y. (2018). A new approach to line simplification based on image processing: A
+case study of water area boundaries. International Journal of Geo-Information, 7–41. doi:10.3390/
+ijgi7020041.
+Shi, W., & Cheung, C. (2006). Performance evaluation of line simplification algorithms for vector gen-
+eralization. The Cartographic Journal, 43(1), 27–44. doi:10.1179/000870406X93490
+Stanislawski, L. V. (2009). Feature pruning by upstream drainage area to support automated gener-
+alization of the United States National Hydrography dataset. Computers, Environment and Urban
+Systems, 33(5), 325–333.
+24
+B. J. KRONENFELD ET AL.
+Stanislawski, L. V., Buttenfield, B. P., Bereuter, P., Savino, S., & Brewer, C. A. (2014). Generalization oper-
+ators. In D. Burghardt, C. Duchêne, & W. A. Mackaness (Eds.), Abstracting information in a data rich
+world: Methodologies and applications of map generalization (pp. 157–195). Berlin: Springer Lecture
+Notes in Geoinformation and Cartography. doi: 10.1007/978-3-319-00203-3
+Stanislawski, L. V., Falgout, J., & Buttenfield, B. P. (2015). Automated extraction of natural drainage
+density patterns for the conterminous united states through high-performance computing. The
+Cartographic Journal, 52(2), 185–192. doi:10.1080/00087041.2015.1119466
+Stanislawski, L. V., Liu, Y., Buttenfield, B. P., Survila, K., Wendel, J., & Okok, A. (2016). High performance
+computing to support multiscale representation of hydrography in the conterminous United
+States. Proceedings, 19th ICA workshop on generalization and multiple representation, June 14,
+2016, Helsinki, Finland, 10 p.
+Töpfer, F., & Pillewizer, W. (1966). The principles of selection. The Cartographic Journal, 3(1), 10–16.
+Tutić, D., & Lapaine, M. (2009). Area preserving cartographic line generalization. Journal of the
+Croatian Cartographic Society, 8(11), 84–100.
+U.S. Bureau of the Budget. (1947). United States National Map accuracy standards, June 17.
+U.S. Geological Survey. (2017). The National Hydrography dataset. Production dates 2002-2017.
+Retrieved from https://nhd.usgs.gov/data.html, Last visited 03/17/2017.
+Visvalingam, M., & Whyatt, J. D. (1992). Line generalisation by repeated elimination of the smallest
+area. Discussion paper 10, Cartographic Information Systems Research Group (CISRG), The
+University of Hull.
+Wang, Z., & Müller, J.-C. (1998). Line generalization based on analysis of shape characteristics.
+Cartography and Geographic Information Systems, 25(1), 3–15.
+Zhou, S., & Jones, C. B. (2005). Shape-aware line generalisation with weighted effective area. In P. F.
+Fisher (Ed.), Developments in Spatial Handling 11th International Symposium on Spatial Handling
+(pp. 369–380). Berlin: Springer-Verlag.
+INTERNATIONAL JOURNAL OF CARTOGRAPHY
+25
