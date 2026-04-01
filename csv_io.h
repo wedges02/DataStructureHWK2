@@ -18,7 +18,12 @@
 inline std::map<int, std::vector<Point>> ParseInputCSV(const std::string &path)
 {
     std::ifstream fin(path);
-
+    if (!fin.is_open())
+    {
+        std::cerr << "Cannot open " << path << "\n";
+        return {};
+    }
+    
     std::map<int, std::vector<Point>> ringPoints;
     std::string line;
     std::getline(fin, line); // skip header
