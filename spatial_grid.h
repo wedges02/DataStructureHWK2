@@ -3,6 +3,8 @@
 
 #include "geometry.h"
 
+#include <algorithm>
+#include <cmath>
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
