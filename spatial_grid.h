@@ -137,7 +137,18 @@ inline bool SpatialGrid::FindIntersection(const Point &P, const Point &Q,
 
     if ((long long)(x1 - x0 + 1) * (y1 - y0 + 1) > MAX_CELLS)
     {
-        // Oversized-query fallback path is added in the next step.
+        for (int vi = 0; vi < (int)pool.size(); vi++)
+        {
+            if (!pool[vi].alive) continue;
+            
+            int nxt = pool[vi].next;
+
+            if (vi == exA || vi == exB || vi == exC || vi == exD ||
+                nxt == exA || nxt == exB || nxt == exC || nxt == exD) continue;
+
+            if (SegmentsProperlyIntersect(P, Q, pool[vi].pt, pool[nxt].pt)) return true;
+        }
+
         return false;
     }
 
