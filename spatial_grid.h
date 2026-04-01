@@ -66,7 +66,7 @@ struct SpatialGrid
         int x0 = ToGrid(std::min(a.x, b.x)), x1 = ToGrid(std::max(a.x, b.x));
         int y0 = ToGrid(std::min(a.y, b.y)), y1 = ToGrid(std::max(a.y, b.y));
 
-        if ((long long)(x1 - x0 + 1) * (y1 - y0 + 1) > MAX_CELLS) return;
+        if (CellSpan(a, b) > MAX_CELLS) return;
 
         for (int ix = x0; ix <= x1; ix++)
         {
@@ -115,7 +115,7 @@ inline void SpatialGrid::AddEdge(int vi)
     int x0 = ToGrid(std::min(a.x, b.x)), x1 = ToGrid(std::max(a.x, b.x));
     int y0 = ToGrid(std::min(a.y, b.y)), y1 = ToGrid(std::max(a.y, b.y));
 
-    if ((long long)(x1 - x0 + 1) * (y1 - y0 + 1) > MAX_CELLS) return;
+    if (CellSpan(a, b) > MAX_CELLS) return;
 
     for (int ix = x0; ix <= x1; ix++)
     {
@@ -135,7 +135,7 @@ inline bool SpatialGrid::FindIntersection(const Point &P, const Point &Q,
     int x0 = ToGrid(std::min(P.x, Q.x)), x1 = ToGrid(std::max(P.x, Q.x));
     int y0 = ToGrid(std::min(P.y, Q.y)), y1 = ToGrid(std::max(P.y, Q.y));
 
-    if ((long long)(x1 - x0 + 1) * (y1 - y0 + 1) > MAX_CELLS)
+    if (CellSpan(P, Q) > MAX_CELLS)
     {
         for (int vi = 0; vi < (int)pool.size(); vi++)
         {
