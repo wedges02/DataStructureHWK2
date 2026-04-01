@@ -57,6 +57,9 @@ struct SpatialGrid
         curGen = 0;
         std::fill(queryGen.begin(), queryGen.end(), 0);
     }
+
+    // Implemented after Vertex is fully defined.
+    inline void AddEdge(int vi);
 };
 
 // Vertex defined after SpatialGrid so both can
@@ -69,3 +72,21 @@ struct Vertex
     int version;
     bool alive;
 };
+
+inline void SpatialGrid::AddEdge(int vi)
+{
+    const Point &a = pool[vi].pt;
+    const Point &b = pool[pool[vi].next].pt;
+    int x0 = ToGrid(std::min(a.x, b.x)), x1 = ToGrid(std::max(a.x, b.x));
+    int y0 = ToGrid(std::min(a.y, b.y)), y1 = ToGrid(std::max(a.y, b.y));
+
+    if ((long long)(x1 - x0 + 1) * (y1 - y0 + 1) > MAX_CELLS) return;
+
+    for (int ix = x0; ix <= x1; ix++)
+    {
+        for (int iy = y0; iy <= y1; iy++)
+        {
+            cells[CellKey(ix, iy)].push_back(vi);
+        }
+    }
+}
