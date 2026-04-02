@@ -3,6 +3,8 @@
 
 #include "geometry.h"
 
+#include <algorithm>
+#include <cmath>
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
@@ -57,6 +59,44 @@ struct SpatialGrid
         curGen = 0;
         std::fill(queryGen.begin(), queryGen.end(), 0);
     }
+
+    // Implemented after Vertex is fully defined.
+    inline void AddEdge(int vi);
+    
+    void RemoveEdge(int vi, const Point &a, const Point &b)
+    {
+        int x0 = ToGrid(std::min(a.x, b.x)), x1 = ToGrid(std::max(a.x, b.x));
+        int y0 = ToGrid(std::min(a.y, b.y)), y1 = ToGrid(std::max(a.y, b.y));
+
+        if (CellSpan(a, b) > MAX_CELLS) return;
+
+        for (int ix = x0; ix <= x1; ix++)
+        {
+            for (int iy = y0; iy <= y1; iy++)
+            {
+                auto it = cells.find(CellKey(ix, iy));
+
+                if (it == cells.end()) continue;
+
+                auto &bucket = it->second;
+
+                for (int k = (int)bucket.size() - 1; k >= 0; k--)
+                {
+                    if (bucket[k] == vi)
+                    {
+                        bucket[k] = bucket.back();
+                        bucket.pop_back();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Check if segment P→Q intersects any live edge, excluding vertices in the
+    // given set. Returns true on first intersection found.
+    inline bool FindIntersection(const Point &P, const Point &Q,
+                                 int exA, int exB, int exC, int exD);
 };
 
 // Vertex defined after SpatialGrid so both can
@@ -69,3 +109,80 @@ struct Vertex
     int version;
     bool alive;
 };
+
+inline void SpatialGrid::AddEdge(int vi)
+{
+    const Point &a = pool[vi].pt;
+    const Point &b = pool[pool[vi].next].pt;
+    int x0 = ToGrid(std::min(a.x, b.x)), x1 = ToGrid(std::max(a.x, b.x));
+    int y0 = ToGrid(std::min(a.y, b.y)), y1 = ToGrid(std::max(a.y, b.y));
+
+    if (CellSpan(a, b) > MAX_CELLS) return;
+
+    for (int ix = x0; ix <= x1; ix++)
+    {
+        for (int iy = y0; iy <= y1; iy++)
+        {
+            cells[CellKey(ix, iy)].push_back(vi);
+        }
+    }
+}
+
+
+inline bool SpatialGrid::FindIntersection(const Point &P, const Point &Q,
+                                          int exA, int exB, int exC, int exD)
+{
+    curGen++;
+
+    int x0 = ToGrid(std::min(P.x, Q.x)), x1 = ToGrid(std::max(P.x, Q.x));
+    int y0 = ToGrid(std::min(P.y, Q.y)), y1 = ToGrid(std::max(P.y, Q.y));
+
+    if (CellSpan(P, Q) > MAX_CELLS)
+    {
+        for (int vi = 0; vi < (int)pool.size(); vi++)
+        {
+            if (!pool[vi].alive) continue;
+            
+            int nxt = pool[vi].next;
+
+            if (vi == exA || vi == exB || vi == exC || vi == exD ||
+                nxt == exA || nxt == exB || nxt == exC || nxt == exD) continue;
+
+            if (SegmentsProperlyIntersect(P, Q, pool[vi].pt, pool[nxt].pt)) return true;
+        }
+
+        return false;
+    }
+
+    for (int ix = x0; ix <= x1; ix++)
+    {
+        for (int iy = y0; iy <= y1; iy++)
+        {
+            auto it = cells.find(CellKey(ix, iy));
+            if (it == cells.end()) continue;
+
+            for (int vi : it->second)
+            {
+                if (queryGen[vi] == curGen) continue;
+                queryGen[vi] = curGen;
+
+                if (!pool[vi].alive) continue;
+                int nxt = pool[vi].next;
+
+                if (vi == exA || vi == exB || vi == exC || vi == exD ||
+                    nxt == exA || nxt == exB || nxt == exC || nxt == exD)
+                {
+                    continue;
+                }
+
+                if (SegmentsProperlyIntersect(P, Q, pool[vi].pt, pool[nxt].pt))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
