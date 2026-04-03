@@ -47,7 +47,7 @@ inline bool IntersectLineEWithLine(const LinEq &eq, const Point &P,
 }
 
 // ---------------------------------------------------------------------------
-// Placement function (paper §3, Figures 4-6)
+// Placement function (Figures 4-6)
 // ---------------------------------------------------------------------------
 inline Point ComputeE(const Point &A, const Point &B,
                       const Point &C, const Point &D)
@@ -87,7 +87,7 @@ inline Point ComputeE(const Point &A, const Point &B,
         }
         else
         {
-            useAB = (dB < dC);
+            useAB = (dB > dC);
         }
     }
     else
@@ -248,9 +248,7 @@ inline double ComputeDisplacement(const Point &A, const Point &B,
     return totalDisp;
 }
 
-// ---------------------------------------------------------------------------
 // Collapse candidate
-// ---------------------------------------------------------------------------
 struct Collapse
 {
     int A, B, C, D;
@@ -266,9 +264,7 @@ struct Collapse
     }
 };
 
-// ---------------------------------------------------------------------------
 // Ring bookkeeping
-// ---------------------------------------------------------------------------
 struct RingInfo
 {
     int ringId;
