@@ -23,19 +23,21 @@ xcode-select --install
 ## Building
 
 ```
-make
+make                # builds the simplify executable
+make converter      # builds the Desmos converter tool
 ```
-
-This produces an executable called `simplify` in the repository root.
 
 ## Usage
 
 ```
-./simplify <input_file.csv> <target_vertices>
+./simplify <input_file.csv> <target_vertices> [--no-grid]
 ```
 
-- `input_file.csv` — CSV file with columns `ring_id,vertex_id,x,y`. Ring 0 is the exterior ring (counterclockwise); rings 1, 2, ... are holes (clockwise).
-- `target_vertices` — desired maximum total vertex count across all rings.
+| Argument | Description |
+|---|---|
+| `input_file.csv` | CSV file with columns `ring_id,vertex_id,x,y`. Ring 0 is the exterior ring (counterclockwise); rings 1, 2, ... are holes (clockwise). |
+| `target_vertices` | Desired maximum total vertex count across all rings. |
+| `--no-grid` | Optional. Disables the spatial hash grid and uses brute-force O(n) intersection checks instead. Useful for benchmarking the impact of the spatial index. |
 
 Output is printed to stdout in the same CSV format, followed by three summary lines:
 ```
@@ -44,71 +46,43 @@ Total signed area in output: <scientific notation>
 Total areal displacement: <scientific notation>
 ```
 
+## Testing
+
+```
+make test               # run all tests with spatial grid (default)
+make test_grid          # same as above
+make test_unoptimized   # run all tests without spatial grid (brute force)
+make test_all           # run both suites back to back
+```
+
+- `test_grid` outputs results to `test_cases/actual_*.txt`
+- `test_unoptimized` outputs results to `test_cases/unoptimized_actual_*.txt`
+- Each test verifies that the output area matches the input area within floating-point tolerance.
+- Tests time out after 300 seconds. Large inputs (e.g. 410k vertices) will likely time out in brute-force mode.
+
 ## Project Structure
 
 ```
-simplify.cpp        Main APSC loop, vertex pool, priority queue orchestration
-geometry.h          Point struct, cross product, triangle area, segment intersection
-spatial_grid.h      Spatial hash grid for O(1)-amortized intersection queries
-apsc_core.h         ComputeE placement, ComputeDisplacement, Collapse/RingInfo structs
-csv_io.h            CSV parsing (ParseInputCSV) and output formatting (WriteOutput)
-converter.cpp       Interactive tool to convert between CSV and Desmos table format
-desmos/             Desmos-compatible CSV outputs for visualization
-makefile            Build target + test harness with 15 test cases
-test_cases/         Input CSVs, expected outputs, and custom test cases
-```
-
-### Converter
-
-A helper utility for visualizing and editing polygons in [Desmos](https://www.desmos.com/calculator). Build and run it with:
-
-```
-make converter
-./converter
-```
-
-**CSV to Desmos (`/d`):** Converts a test case CSV into Desmos-compatible files. Polygons with multiple rings are split into separate files and output into the `desmos/` folder. To import, copy the entire contents of a file and paste directly into Desmos — it will automatically become a table.
-
-Once in Desmos, you can visualize a table as a shape with `polygon(x1,y1)`, assign it to a variable (e.g. `a = polygon(x1,y1)`) and use `area(a)` or `perimeter(a)` to inspect it. To make points draggable, long-click the colored button beside the Y column header and select the Drag option.
-
-**Desmos to CSV (`/c`):** Converts Desmos table data back into the input CSV format. To export data from Desmos, open the browser console (Inspect Element > Console) and paste:
-
-```js
-state = Calc.getState()
-for (let i = 0; i < state.expressions.list.length; i++) {
-  if (state.expressions.list[i].type == "table") {
-    for (let j = 0; j < state.expressions.list[i].columns.length; j++) {
-      console.log(state.expressions.list[i].columns[j].latex + " = " +
-        state.expressions.list[i].columns[j].values.toString())
-    }
-  }
-}
-```
-
-This prints each column as e.g. `x_{1} = 100,200,300,400`. When running the converter, paste the x and y lines in individually. The output file is written to `test_cases/`.
-
-### Plot Generator
-
-Generates experimental evaluation plots (running time, memory usage, areal displacement) into the `plots/` directory. Requires Python 3 with `matplotlib`, `numpy`, and `scipy`:
-
-```
-pip install matplotlib numpy scipy
-python3 generate_plots.py
+simplify.cpp          Main APSC loop, vertex pool, priority queue orchestration
+geometry.h            Point struct, cross product, triangle area, segment intersection
+spatial_grid.h        Spatial hash grid for O(1)-amortized intersection queries
+apsc_core.h           ComputeE placement, ComputeDisplacement, Collapse/RingInfo structs
+csv_io.h              CSV parsing (ParseInputCSV) and output formatting (WriteOutput)
+converter.cpp         Interactive tool to convert between CSV and Desmos table format
+generate_plots.py     Generates experimental evaluation plots into plots/
+desmos/               Desmos-compatible CSV outputs for visualization
+test_cases/           Input CSVs, expected outputs, and custom test cases
 ```
 
 ## Key Data Structures
 
 - **Circular doubly linked list** — each ring is stored as a circular linked list in a global vertex pool, enabling O(1) vertex removal and neighbor traversal during collapse.
 - **Min-heap priority queue** (`std::priority_queue` with `std::greater`) — selects the collapse candidate with minimum areal displacement. Uses lazy deletion via version counters to avoid expensive re-heapification.
-- **Spatial hash grid** (`std::unordered_map<int64_t, vector<int>>`) — accelerates intersection checks by bucketing edges into grid cells. Includes a brute-force fallback (MAX_CELLS cap) for edges that span too many cells, and periodic full rebuilds to adapt cell size as vertex count drops.
+- **Spatial hash grid** (`std::unordered_map<int64_t, vector<int>>`) — accelerates intersection checks by bucketing edges into grid cells. Includes a brute-force fallback (MAX_CELLS cap) for edges that span too many cells, and periodic full rebuilds to adapt cell size as vertex count drops. Can be disabled with `--no-grid` for benchmarking.
 
 ## Test Results
 
-All 15 test cases pass. Area is preserved exactly (within floating-point tolerance) on every case. Run tests with:
-
-```
-make test
-```
+All 15 test cases pass. Area is preserved exactly (within floating-point tolerance) on every case.
 
 ### Reference test cases (provided by instructors)
 
@@ -141,6 +115,46 @@ Four additional test cases (`test_cases/junbo_test_*.csv`) were created to test 
 - `junbo_test_blackhole.csv` — polygon with tightly nested holes (tests close ring proximity)
 - `junbo_test_singapore.csv` — real-world geographic boundary (high vertex count)
 - `junbo_test_sit.csv` — complex boundary with irregular features
+
+## Tools
+
+### Plot Generator
+
+Generates experimental evaluation plots (running time, memory usage, areal displacement) comparing spatial grid vs. brute force performance. Outputs to `plots/`.
+
+```
+pip install matplotlib numpy scipy
+python3 generate_plots.py
+```
+
+### Desmos Converter
+
+Interactive tool for visualizing and editing polygons in [Desmos](https://www.desmos.com/calculator).
+
+```
+make converter
+./converter
+```
+
+**CSV to Desmos (`/d`):** Converts a test case CSV into Desmos-compatible files. Polygons with multiple rings are split into separate files in `desmos/`. Copy the entire contents of a file and paste directly into Desmos — it automatically becomes a table.
+
+Once in Desmos, you can visualize a table as a shape with `polygon(x1,y1)`, assign it to a variable (e.g. `a = polygon(x1,y1)`) and use `area(a)` or `perimeter(a)` to inspect it. To make points draggable, long-click the colored button beside the Y column header and select the Drag option.
+
+**Desmos to CSV (`/c`):** Converts Desmos table data back into the input CSV format. To export data from Desmos, open the browser console (Inspect Element > Console) and paste:
+
+```js
+state = Calc.getState()
+for (let i = 0; i < state.expressions.list.length; i++) {
+  if (state.expressions.list[i].type == "table") {
+    for (let j = 0; j < state.expressions.list[i].columns.length; j++) {
+      console.log(state.expressions.list[i].columns[j].latex + " = " +
+        state.expressions.list[i].columns[j].values.toString())
+    }
+  }
+}
+```
+
+This prints each column as e.g. `x_{1} = 100,200,300,400`. When running the converter, paste the x and y lines in individually. The output file is written to `test_cases/`.
 
 ## Reference
 

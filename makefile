@@ -27,7 +27,7 @@ TESTS = \
 # Timeout per test case in seconds (0 = no timeout)
 TIMEOUT = 300
 
-.PHONY: all clean test
+.PHONY: all clean test test_grid test_unoptimized test_all
 
 all: $(TARGET)
 
@@ -37,8 +37,13 @@ converter: converter.cpp
 $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-test: $(TARGET)
-	@passed=0; failed=0; skipped=0; total=0; \
+# Run tests with spatial grid (default)
+test: test_grid
+
+# Run tests with spatial grid, output to actual_*.txt
+test_grid: $(TARGET)
+	@echo "=== Running tests WITH spatial grid ==="; echo ""; \
+	passed=0; failed=0; skipped=0; total=0; \
 	for entry in $(TESTS); do \
 		name=$$(echo $$entry | cut -d: -f1); \
 		target=$$(echo $$entry | cut -d: -f2); \
@@ -70,7 +75,47 @@ test: $(TARGET)
 		fi; \
 		echo ""; \
 	done; \
-	echo "=== Summary: $$passed passed, $$failed failed, $$skipped skipped out of $$total ==="
+	echo "=== Grid: $$passed passed, $$failed failed, $$skipped skipped out of $$total ==="
+
+# Run tests WITHOUT spatial grid (brute force), output to unoptimized_actual_*.txt
+test_unoptimized: $(TARGET)
+	@echo "=== Running tests WITHOUT spatial grid (brute force) ==="; echo ""; \
+	passed=0; failed=0; skipped=0; total=0; \
+	for entry in $(TESTS); do \
+		name=$$(echo $$entry | cut -d: -f1); \
+		target=$$(echo $$entry | cut -d: -f2); \
+		input="$(TEST_DIR)/input_$${name}.csv"; \
+		expected="$(TEST_DIR)/output_$${name}.txt"; \
+		actual="$(TEST_DIR)/unoptimized_actual_$${name}.txt"; \
+		total=$$((total + 1)); \
+		echo "=== Test: $$name (target=$$target) ==="; \
+		if timeout $(TIMEOUT) ./$(TARGET) $$input $$target --no-grid > $$actual 2>/dev/null; then \
+			if diff -q $$expected $$actual > /dev/null 2>&1; then \
+				echo "  PASS (exact match)"; \
+				passed=$$((passed + 1)); \
+			else \
+				in_area=$$(grep "area in input" $$actual | awk '{print $$NF}'); \
+				out_area=$$(grep "area in output" $$actual | awk '{print $$NF}'); \
+				if [ -n "$$in_area" ] && [ -n "$$out_area" ] && [ "$$in_area" = "$$out_area" ]; then \
+					echo "  PASS (area preserved, different vertices due to tie-breaking)"; \
+					passed=$$((passed + 1)); \
+				else \
+					echo "  FAIL (area mismatch: input=$$in_area output=$$out_area)"; \
+					failed=$$((failed + 1)); \
+				fi; \
+				echo "  Diff summary:"; \
+				diff $$expected $$actual | tail -6; \
+			fi; \
+		else \
+			echo "  SKIPPED (timeout after $(TIMEOUT)s)"; \
+			skipped=$$((skipped + 1)); \
+		fi; \
+		echo ""; \
+	done; \
+	echo "=== Brute force: $$passed passed, $$failed failed, $$skipped skipped out of $$total ==="
+
+# Run both test suites
+test_all: test_grid test_unoptimized
 
 clean:
-	rm -f $(TARGET) $(TEST_DIR)/actual_*.txt
+	rm -f $(TARGET) converter $(TEST_DIR)/actual_*.txt $(TEST_DIR)/unoptimized_actual_*.txt
