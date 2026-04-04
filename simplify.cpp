@@ -18,6 +18,7 @@
 std::vector<Vertex> pool;
 
 static SpatialGrid grid;
+static bool useGrid = true;
 
 using CollapseQueue = std::priority_queue<Collapse, std::vector<Collapse>, std::greater<Collapse>>;
 
@@ -50,8 +51,22 @@ static Collapse MakeCollapse(int ai, int bi, int ci, int di, int &seqCounter)
     return col;
 }
 
+static bool BruteForceIntersection(const Point &P, const Point &Q, int exA, int exB, int exC, int exD)
+{
+    for (int vi = 0; vi < (int)pool.size(); vi++)
+    {
+        if (!pool[vi].alive) continue;
+        int nxt = pool[vi].next;
+        if (vi == exA || vi == exB || vi == exC || vi == exD ||
+            nxt == exA || nxt == exB || nxt == exC || nxt == exD) continue;
+        if (SegmentsProperlyIntersect(P, Q, pool[vi].pt, pool[nxt].pt)) return true;
+    }
+    return false;
+}
+
 static bool SegIntersectsAny(const Point &P, const Point &Q, int exA, int exB, int exC, int exD)
 {
+    if (!useGrid) return BruteForceIntersection(P, Q, exA, exB, exC, exD);
     return grid.FindIntersection(P, Q, exA, exB, exC, exD);
 }
 
@@ -59,24 +74,26 @@ static void DoRebuild(CollapseQueue &pq, std::vector<RingInfo> &rings, double gr
 {
     while (!pq.empty()) pq.pop();
 
-    double cs = gridSpan / (4.0 * std::sqrt((double)std::max(totalVertices, 4)));
-    if (cs < 1e-12) cs = 1.0;
-    grid.Rebuild(cs, totalVertices);
-
-    int numRings = (int)rings.size();
-    for (int r = 0; r < numRings; r++)
+    if (useGrid)
     {
-        if (rings[r].size < 4) continue;
-        int start = rings[r].head;
-        int v = start;
-        do
+        double cs = gridSpan / (4.0 * std::sqrt((double)std::max(totalVertices, 4)));
+        if (cs < 1e-12) cs = 1.0;
+        grid.Rebuild(cs, totalVertices);
+
+        for (int r = 0; r < (int)rings.size(); r++)
         {
-            grid.AddEdge(v);
-            v = pool[v].next;
-        } while (v != start);
+            if (rings[r].size < 4) continue;
+            int start = rings[r].head;
+            int v = start;
+            do
+            {
+                grid.AddEdge(v);
+                v = pool[v].next;
+            } while (v != start);
+        }
     }
 
-    for (int r = 0; r < numRings; r++)
+    for (int r = 0; r < (int)rings.size(); r++)
     {
         if (rings[r].size < 4) continue;
         int start = rings[r].head;
@@ -96,14 +113,15 @@ static void DoRebuild(CollapseQueue &pq, std::vector<RingInfo> &rings, double gr
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3)
+    if (argc < 3 || argc > 4)
     {
-        std::cerr << "Usage: " << argv[0] << " <input.csv> <target_vertices>\n";
+        std::cerr << "Usage: " << argv[0] << " <input.csv> <target_vertices> [--no-grid]\n";
         return 1;
     }
 
     std::string inputFile = argv[1];
     int targetVertices = std::atoi(argv[2]);
+    if (argc == 4 && std::string(argv[3]) == "--no-grid") useGrid = false;
 
     // Parse input
     auto ringPoints = ParseInputCSV(inputFile);
@@ -160,18 +178,21 @@ int main(int argc, char *argv[])
             minY = std::min(minY, v.pt.y); maxY = std::max(maxY, v.pt.y);
         }
         gridSpan = std::max(maxX - minX, maxY - minY);
-        double cs = gridSpan / (4.0 * std::sqrt((double)totalVertices));
-        if (cs < 1e-12) cs = 1.0;
-        grid.Init(cs, (int)pool.size());
-        for (int r = 0; r < numRings; r++)
+        if (useGrid)
         {
-            int start = rings[r].head;
-            int v = start;
-            do
+            double cs = gridSpan / (4.0 * std::sqrt((double)totalVertices));
+            if (cs < 1e-12) cs = 1.0;
+            grid.Init(cs, (int)pool.size());
+            for (int r = 0; r < numRings; r++)
             {
-                grid.AddEdge(v);
-                v = pool[v].next;
-            } while (v != start);
+                int start = rings[r].head;
+                int v = start;
+                do
+                {
+                    grid.AddEdge(v);
+                    v = pool[v].next;
+                } while (v != start);
+            }
         }
     }
 
@@ -234,6 +255,7 @@ int main(int argc, char *argv[])
         if (intersects) continue;
 
         // Update spatial grid: remove old edges
+        if (useGrid)
         {
             Point oldB = pool[col.B].pt;
             Point oldC = pool[col.C].pt;
@@ -252,8 +274,11 @@ int main(int argc, char *argv[])
         if (rings[rid].head == col.C) rings[rid].head = col.B;
 
         // Add new edges to grid
-        grid.AddEdge(col.A);
-        grid.AddEdge(col.B);
+        if (useGrid)
+        {
+            grid.AddEdge(col.A);
+            grid.AddEdge(col.B);
+        }
 
         rings[rid].size--;
         totalVertices--;

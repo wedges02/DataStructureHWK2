@@ -31,6 +31,9 @@ TIMEOUT = 300
 
 all: $(TARGET)
 
+converter: converter.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
 $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 

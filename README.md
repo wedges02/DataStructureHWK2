@@ -52,8 +52,48 @@ geometry.h          Point struct, cross product, triangle area, segment intersec
 spatial_grid.h      Spatial hash grid for O(1)-amortized intersection queries
 apsc_core.h         ComputeE placement, ComputeDisplacement, Collapse/RingInfo structs
 csv_io.h            CSV parsing (ParseInputCSV) and output formatting (WriteOutput)
+converter.cpp       Interactive tool to convert between CSV and Desmos table format
+desmos/             Desmos-compatible CSV outputs for visualization
 makefile            Build target + test harness with 15 test cases
 test_cases/         Input CSVs, expected outputs, and custom test cases
+```
+
+### Converter
+
+A helper utility for visualizing and editing polygons in [Desmos](https://www.desmos.com/calculator). Build and run it with:
+
+```
+make converter
+./converter
+```
+
+**CSV to Desmos (`/d`):** Converts a test case CSV into Desmos-compatible files. Polygons with multiple rings are split into separate files and output into the `desmos/` folder. To import, copy the entire contents of a file and paste directly into Desmos — it will automatically become a table.
+
+Once in Desmos, you can visualize a table as a shape with `polygon(x1,y1)`, assign it to a variable (e.g. `a = polygon(x1,y1)`) and use `area(a)` or `perimeter(a)` to inspect it. To make points draggable, long-click the colored button beside the Y column header and select the Drag option.
+
+**Desmos to CSV (`/c`):** Converts Desmos table data back into the input CSV format. To export data from Desmos, open the browser console (Inspect Element > Console) and paste:
+
+```js
+state = Calc.getState()
+for (let i = 0; i < state.expressions.list.length; i++) {
+  if (state.expressions.list[i].type == "table") {
+    for (let j = 0; j < state.expressions.list[i].columns.length; j++) {
+      console.log(state.expressions.list[i].columns[j].latex + " = " +
+        state.expressions.list[i].columns[j].values.toString())
+    }
+  }
+}
+```
+
+This prints each column as e.g. `x_{1} = 100,200,300,400`. When running the converter, paste the x and y lines in individually. The output file is written to `test_cases/`.
+
+### Plot Generator
+
+Generates experimental evaluation plots (running time, memory usage, areal displacement) into the `plots/` directory. Requires Python 3 with `matplotlib`, `numpy`, and `scipy`:
+
+```
+pip install matplotlib numpy scipy
+python3 generate_plots.py
 ```
 
 ## Key Data Structures
