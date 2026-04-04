@@ -1,0 +1,14 @@
+# Compiled binaries
+simplify
+converter.out
+*.o
+
+# Generated test output
+test_cases/actual_*.txt
+
+# Submission documents (submitted separately, not part of source code)
+*.docx
+*.pdf
+SUBMISSION DETAILS.txt
+area_and_topology_preserving_polygon_simplification.txt
+
